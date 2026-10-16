@@ -1,5 +1,6 @@
 import { apiClient } from './client.ts';
 import type {
+  AnalyticsSummary,
   Subtask,
   SubtaskCreate,
   Task,
@@ -44,4 +45,8 @@ export async function updateSubtask(
 
 export async function deleteSubtask(taskId: number, subtaskId: number): Promise<void> {
   return apiClient.delete<void>(`/api/tasks/${taskId}/subtasks/${subtaskId}`);
+}
+
+export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
+  return apiClient.get<AnalyticsSummary>('/api/analytics/summary');
 }

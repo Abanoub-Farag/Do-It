@@ -64,3 +64,19 @@ export interface TaskFilterParams {
   skip?: number;
   limit?: number;
 }
+
+export interface DailyActivity {
+  date: string;
+  day_name: string;
+  completed_count: number;
+  focus_minutes: number;
+}
+
+export interface AnalyticsSummary {
+  total_tasks: number;
+  completed_today: number;
+  total_focus_minutes_today: number;
+  completion_rate: number;
+  current_streak_days: number;
+  weekly_activity: DailyActivity[];
+}

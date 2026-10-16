@@ -1,5 +1,6 @@
 import { AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { AnalyticsDashboard } from './components/analytics/index.ts';
 import { CommandBar } from './components/common/index.ts';
 import { FocusModal } from './components/focus/index.ts';
 import { FilterBar, Navbar, type ViewMode } from './components/layout/index.ts';
@@ -44,6 +45,14 @@ function App() {
       }
     }
     return Array.from(tagSet);
+  }, [tasks]);
+
+  // Version counter to trigger analytics re-fetch on task completion or time log
+  const tasksVersion = useMemo(() => {
+    return tasks.reduce(
+      (acc, t) => acc + (t.status === 'done' ? 100 : 0) + t.actual_minutes,
+      tasks.length
+    );
   }, [tasks]);
 
   const handleOpenCreate = useCallback((prefillTitle?: string) => {
@@ -180,6 +189,9 @@ function App() {
             </button>
           </div>
         )}
+
+        {/* Collapsible Productivity Analytics & Insights Dashboard */}
+        <AnalyticsDashboard tasksVersion={tasksVersion} className="mb-6" />
 
         {/* Loading Skeleton Indicator */}
         {loading && tasks.length === 0 ? (

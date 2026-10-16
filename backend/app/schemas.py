@@ -67,3 +67,24 @@ class TaskResponse(TaskBase):
     subtasks: List[SubtaskResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ---------------------------------------------------------
+# Analytics Schemas
+# ---------------------------------------------------------
+
+class DailyActivity(BaseModel):
+    date: str
+    day_name: str
+    completed_count: int
+    focus_minutes: int
+
+
+class AnalyticsSummary(BaseModel):
+    total_tasks: int
+    completed_today: int
+    total_focus_minutes_today: int
+    completion_rate: float
+    current_streak_days: int
+    weekly_activity: List[DailyActivity]
+
