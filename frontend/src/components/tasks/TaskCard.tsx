@@ -7,6 +7,7 @@ import {
   Clock,
   ListChecks,
   Pencil,
+  Timer,
   Trash2,
 } from 'lucide-react';
 import { useState, type MouseEvent } from 'react';
@@ -20,6 +21,7 @@ export interface TaskCardProps {
   onToggleTask: (id: number) => Promise<unknown> | void;
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (id: number) => Promise<unknown> | void;
+  onStartFocus?: (task: Task) => void;
   onToggleSubtask?: (taskId: number, subtaskId: number) => Promise<unknown> | void;
   onAddSubtask?: (taskId: number, payload: { title: string }) => Promise<unknown> | void;
   onDeleteSubtask?: (taskId: number, subtaskId: number) => Promise<unknown> | void;
@@ -56,6 +58,7 @@ export function TaskCard({
   onToggleTask,
   onEditTask,
   onDeleteTask,
+  onStartFocus,
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
@@ -141,6 +144,22 @@ export function TaskCard({
         {/* Priority Badge & Action Buttons */}
         <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
           <Badge priority={task.priority} />
+
+          {onStartFocus && !isDone && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartFocus(task);
+              }}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors
+                focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-400"
+              aria-label="Start Focus mode"
+              title="Focus Mode"
+            >
+              <Timer className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {onEditTask && (
             <button

@@ -1,15 +1,21 @@
 import { AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { CommandBar } from './components/common/index.ts';
+import { FocusModal } from './components/focus/index.ts';
 import { FilterBar, Navbar, type ViewMode } from './components/layout/index.ts';
 import { TaskForm } from './components/tasks/index.ts';
 import { KanbanView, ListView, MatrixView } from './components/views/index.ts';
+import { useKeyboardShortcuts } from './hooks/index.ts';
 import { useTasks } from './hooks/useTasks.ts';
-import type { Task, TaskCreate, TaskStatus, TaskUpdate } from './types/task.ts';
+import type { Priority, Task, TaskCreate, TaskStatus, TaskUpdate } from './types/task.ts';
 
 function App() {
   const [activeView, setActiveView] = useState<ViewMode>('list');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
+  const [isFocusOpen, setIsFocusOpen] = useState(false);
+  const [focusTask, setFocusTask] = useState<Task | null>(null);
 
   const {
     tasks,
@@ -40,8 +46,22 @@ function App() {
     return Array.from(tagSet);
   }, [tasks]);
 
-  const handleOpenCreate = useCallback(() => {
-    setEditingTask(null);
+  const handleOpenCreate = useCallback((prefillTitle?: string) => {
+    if (prefillTitle) {
+      setEditingTask({
+        id: 0,
+        title: prefillTitle,
+        status: 'todo',
+        priority: 'medium',
+        tags: [],
+        actual_minutes: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        subtasks: [],
+      } as Task);
+    } else {
+      setEditingTask(null);
+    }
     setIsFormOpen(true);
   }, []);
 
@@ -57,7 +77,7 @@ function App() {
 
   const handleFormSubmit = useCallback(
     async (data: TaskCreate | TaskUpdate) => {
-      if (editingTask) {
+      if (editingTask && editingTask.id !== 0) {
         await editTask(editingTask.id, data as TaskUpdate);
       } else {
         await addTask(data as TaskCreate);
@@ -73,12 +93,62 @@ function App() {
     [toggleTaskStatus]
   );
 
+  // Focus Modal Handlers
+  const handleStartFocus = useCallback((task: Task) => {
+    setFocusTask(task);
+    setIsFocusOpen(true);
+  }, []);
+
+  const handleCloseFocus = useCallback(() => {
+    setIsFocusOpen(false);
+    setFocusTask(null);
+  }, []);
+
+  const handleLogTime = useCallback(
+    async (taskId: number, additionalMinutes: number) => {
+      const current = tasks.find((t) => t.id === taskId);
+      const updatedTotal = (current?.actual_minutes ?? 0) + additionalMinutes;
+      await editTask(taskId, { actual_minutes: updatedTotal });
+    },
+    [tasks, editTask]
+  );
+
+  // Focus search input helper for shortcut '/'
+  const handleFocusSearch = useCallback(() => {
+    const searchInput = document.querySelector<HTMLInputElement>(
+      'input[placeholder*="Search"]'
+    );
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.select();
+    }
+  }, []);
+
+  const handleCloseActiveModal = useCallback(() => {
+    if (isCommandBarOpen) {
+      setIsCommandBarOpen(false);
+    } else if (isFocusOpen) {
+      handleCloseFocus();
+    } else if (isFormOpen) {
+      handleCloseForm();
+    }
+  }, [isCommandBarOpen, isFocusOpen, isFormOpen, handleCloseFocus, handleCloseForm]);
+
+  // Global Keyboard Shortcuts
+  useKeyboardShortcuts({
+    onOpenCommandBar: () => setIsCommandBarOpen(true),
+    onNewTask: () => handleOpenCreate(),
+    onFocusSearch: handleFocusSearch,
+    onSwitchView: (view) => setActiveView(view),
+    onCloseActiveModal: handleCloseActiveModal,
+  });
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-purple-200">
       {/* Top Navbar */}
       <Navbar
         tasks={tasks}
-        onNewTask={handleOpenCreate}
+        onNewTask={() => handleOpenCreate()}
         loading={loading}
       />
 
@@ -126,10 +196,11 @@ function App() {
                 onToggleTask={toggleTaskStatus}
                 onEditTask={handleOpenEdit}
                 onDeleteTask={removeTask}
+                onStartFocus={handleStartFocus}
                 onToggleSubtask={toggleSubtask}
                 onAddSubtask={addSubtask}
                 onDeleteSubtask={removeSubtask}
-                onNewTask={handleOpenCreate}
+                onNewTask={() => handleOpenCreate()}
               />
             )}
 
@@ -139,6 +210,7 @@ function App() {
                 onToggleTask={toggleTaskStatus}
                 onEditTask={handleOpenEdit}
                 onDeleteTask={removeTask}
+                onStartFocus={handleStartFocus}
                 onToggleSubtask={toggleSubtask}
                 onAddSubtask={addSubtask}
                 onDeleteSubtask={removeSubtask}
@@ -152,10 +224,11 @@ function App() {
                 onUpdateTaskStatus={handleUpdateTaskStatus}
                 onEditTask={handleOpenEdit}
                 onDeleteTask={removeTask}
+                onStartFocus={handleStartFocus}
                 onToggleSubtask={toggleSubtask}
                 onAddSubtask={addSubtask}
                 onDeleteSubtask={removeSubtask}
-                onNewTask={handleOpenCreate}
+                onNewTask={() => handleOpenCreate()}
               />
             )}
           </div>
@@ -168,6 +241,28 @@ function App() {
         onClose={handleCloseForm}
         onSubmit={handleFormSubmit}
         initialTask={editingTask}
+      />
+
+      {/* Focus Mode Pomodoro Overlay */}
+      <FocusModal
+        isOpen={isFocusOpen}
+        task={focusTask}
+        onClose={handleCloseFocus}
+        onLogTime={handleLogTime}
+        onToggleSubtask={toggleSubtask}
+        onToggleTask={toggleTaskStatus}
+      />
+
+      {/* Global Cmd+K Command Bar */}
+      <CommandBar
+        isOpen={isCommandBarOpen}
+        onClose={() => setIsCommandBarOpen(false)}
+        tasks={tasks}
+        onNewTask={(prefill) => handleOpenCreate(prefill)}
+        onViewChange={(view) => setActiveView(view)}
+        onFilterPriority={(p?: Priority) => setFilters((prev) => ({ ...prev, priority: p }))}
+        onSelectTask={(task) => handleOpenEdit(task)}
+        onStartFocus={(task) => handleStartFocus(task)}
       />
     </div>
   );

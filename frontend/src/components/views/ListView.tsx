@@ -9,6 +9,7 @@ export interface ListViewProps {
   onToggleTask: (id: number) => Promise<unknown> | void;
   onEditTask?: (task: Task) => void;
   onDeleteTask?: (id: number) => Promise<unknown> | void;
+  onStartFocus?: (task: Task) => void;
   onToggleSubtask?: (taskId: number, subtaskId: number) => Promise<unknown> | void;
   onAddSubtask?: (taskId: number, payload: { title: string }) => Promise<unknown> | void;
   onDeleteSubtask?: (taskId: number, subtaskId: number) => Promise<unknown> | void;
@@ -20,6 +21,7 @@ export function ListView({
   onToggleTask,
   onEditTask,
   onDeleteTask,
+  onStartFocus,
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
@@ -74,6 +76,7 @@ export function ListView({
                 onToggleTask={onToggleTask}
                 onEditTask={onEditTask}
                 onDeleteTask={onDeleteTask}
+                onStartFocus={onStartFocus}
                 onToggleSubtask={onToggleSubtask}
                 onAddSubtask={onAddSubtask}
                 onDeleteSubtask={onDeleteSubtask}
@@ -111,6 +114,7 @@ export function ListView({
                   onToggleTask={onToggleTask}
                   onEditTask={onEditTask}
                   onDeleteTask={onDeleteTask}
+                  onStartFocus={onStartFocus}
                   onToggleSubtask={onToggleSubtask}
                   onAddSubtask={onAddSubtask}
                   onDeleteSubtask={onDeleteSubtask}
