@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, engine
 import app.models  # Ensure models are registered on Base.metadata before create_all
+from app.routers import tasks
 
 
 @asynccontextmanager
@@ -31,6 +32,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register API Routers
+app.include_router(tasks.router)
 
 
 @app.get("/health", tags=["Health"])
